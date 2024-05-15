@@ -1,5 +1,4 @@
-# Final-Project-JSCRIPT-330-B
-Event Countdown Application
+# Final-Project-JSCRIPT-330-B / Event Countdown Application
 
 Proposal and Task Breakdown
 1. Scenario:
