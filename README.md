@@ -9,11 +9,13 @@ The Event Countdown Application is designed to provide users with a platform whe
 People often find it challenging to keep track of upcoming events or deadlines and accurately calculate the time remaining until they occur. Traditional methods such as using calendars or manual calculations may not always be convenient or effective. The Event Countdown Application seeks to solve this problem by providing users with a simple and intuitive platform to create, manage, and track countdowns to their events.
 
 3. Technical Components:
+
 Routes: The application will implement CRUD operations for countdowns, user authentication, and authorization.
 Data Models: The data models will include entities for users and countdowns. User authentication will be managed using JSON Web Tokens (JWT) for secure authentication.
 Search Functionality: The application will implement text search functionality to allow users to search for specific countdowns by event names, descriptions, or keywords. This feature will enhance the user experience by enabling quick and efficient retrieval of relevant countdowns.
 
 4. Meeting Project Requirements:
+
 Authentication and Authorization:
 Users will be able to register, login, and authenticate to access the application securely.
 Authorization will be implemented to ensure users can only manage their own countdowns.
@@ -25,6 +27,7 @@ Thorough testing will be conducted for all routes using testing frameworks like 
 Test coverage will be maintained at > 80% to ensure the reliability and stability of the application.
 
 5. Timeline:
+
 Week 6:
 - Project setup, database schema design.
 - Implement authentication and basic CRUD operations for countdowns.
