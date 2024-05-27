@@ -1,5 +1,22 @@
 # Final-Project-JSCRIPT-330-B / Event Countdown Application
 
+~ Proof of Concept ~
+
+Completed Work
+- Project setup with Express and Mongoose.
+- Basic Express server running.
+- Mongoose connection to MongoDB established.
+- Basic project structure created for future development.
+- Initial user model and countdown model created.
+
+Work Still Needed
+- Implementation of authentication and authorization.
+- CRUD operations for countdowns.
+- User management routes (registration, login, profile update).
+- Search functionality for countdowns.
+- Writing and running tests using Jest.
+- Documentation of project setup, development process, and API documentation.
+
 Proposal and Task Breakdown
 1. Scenario:
 The Event Countdown Application is designed to provide users with a platform where they can create and track countdowns to important events or deadlines. Whether it's an upcoming birthday, a project deadline, or a vacation, users can use this application to stay organized and keep track of how much time is left until their events occur.
