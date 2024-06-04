@@ -19,8 +19,7 @@ Authentication and Authorization:
 Users will be able to register, login, and authenticate to access the application securely.
 Authorization will be implemented to ensure users can only manage their own countdowns.
 CRUD Routes:
-CRUD routes will be implemented for countdowns, allowing users to create, read, update, and delete countdowns.
-Additional routes will be implemented for user management, including registration, login, and profile update.
+CRUD routes will be implemented for countdowns, allowing users to create, read, update, and delete countdowns. Additional CRUD routes will be implemented for categories, allowing users to create, read, update, and delete categories to organize their countdowns. Further routes will be implemented for user management, including registration, login, and profile update. 
 Testing:
 Thorough testing will be conducted for all routes using testing frameworks like Mocha and Chai.
 Test coverage will be maintained at > 80% to ensure the reliability and stability of the application.
