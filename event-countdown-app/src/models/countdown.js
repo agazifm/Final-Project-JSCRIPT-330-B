@@ -18,7 +18,7 @@ const countdownSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category'
   },
-  userId: {
+  owner: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'User'
@@ -26,6 +26,8 @@ const countdownSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+countdownSchema.index({ title: 'text', description: 'text' });
 
 const Countdown = mongoose.model('Countdown', countdownSchema);
 module.exports = Countdown;

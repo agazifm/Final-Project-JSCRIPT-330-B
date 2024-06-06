@@ -27,6 +27,10 @@ const userSchema = new mongoose.Schema({
       type: String,
       required: true
     }
+  }],
+  countdowns: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Countdown'
   }]
 });
 

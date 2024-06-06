@@ -7,10 +7,12 @@ const router = new express.Router();
 router.post('/countdowns', auth, async (req, res) => {
   const countdown = new Countdown({
     ...req.body,
-    userId: req.user._id
+    owner: req.user._id
   });
   try {
     await countdown.save();
+    req.user.countdowns = req.user.countdowns.concat(countdown._id);
+    await req.user.save();
     res.status(201).send(countdown);
   } catch (e) {
     res.status(400).send(e);
@@ -20,18 +22,21 @@ router.post('/countdowns', auth, async (req, res) => {
 // Read all Countdowns
 router.get('/countdowns', auth, async (req, res) => {
   try {
-    await req.user.populate('countdowns').execPopulate();
+    await req.user.populate('countdowns');
+    console.log('Populated countdowns:', req.user.countdowns);  // Debugging log
     res.send(req.user.countdowns);
   } catch (e) {
+    console.error(e);  // Error logging
     res.status(500).send();
   }
 });
+
 
 // Read Countdown by ID
 router.get('/countdowns/:id', auth, async (req, res) => {
   const _id = req.params.id;
   try {
-    const countdown = await Countdown.findOne({ _id, userId: req.user._id });
+    const countdown = await Countdown.findOne({ _id, owner: req.user._id });
     if (!countdown) {
       return res.status(404).send();
     }
@@ -52,7 +57,7 @@ router.patch('/countdowns/:id', auth, async (req, res) => {
   }
 
   try {
-    const countdown = await Countdown.findOne({ _id: req.params.id, userId: req.user._id });
+    const countdown = await Countdown.findOne({ _id: req.params.id, owner: req.user._id });
     if (!countdown) {
       return res.status(404).send();
     }
@@ -68,7 +73,7 @@ router.patch('/countdowns/:id', auth, async (req, res) => {
 // Delete Countdown
 router.delete('/countdowns/:id', auth, async (req, res) => {
   try {
-    const countdown = await Countdown.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
+    const countdown = await Countdown.findOneAndDelete({ _id: req.params.id, owner: req.user._id });
     if (!countdown) {
       return res.status(404).send();
     }
@@ -80,17 +85,16 @@ router.delete('/countdowns/:id', auth, async (req, res) => {
 
 // Search Countdowns
 router.get('/countdowns/search/:query', auth, async (req, res) => {
-    const query = req.params.query;
-    try {
-      const countdowns = await Countdown.find({ 
-        $text: { $search: query }, 
-        userId: req.user._id 
-      });
-      res.send(countdowns);
-    } catch (e) {
-      res.status(500).send();
-    }
-  });
-  
+  const query = req.params.query;
+  try {
+    const countdowns = await Countdown.find({ 
+      $text: { $search: query }, 
+      owner: req.user._id 
+    });
+    res.send(countdowns);
+  } catch (e) {
+    res.status(500).send();
+  }
+});
 
 module.exports = router;

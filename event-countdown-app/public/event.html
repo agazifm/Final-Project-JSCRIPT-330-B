@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Detail</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>Event Detail</h1>
+  <button onclick="window.location.href='/dashboard.html'">Back to Dashboard</button>
+  <div id="event-detail">
+    <!-- Event details will be inserted here dynamically -->
+  </div>
+
+  <script>
+    async function loadEvent() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/countdowns/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const event = await response.json();
+      const eventDetail = document.getElementById('event-detail');
+      eventDetail.innerHTML = `
+        <h2>${event.title}</h2>
+        <p>${event.description}</p>
+        <p>${new Date(event.date).toLocaleString()}</p>
+        <p>Time Remaining: <span id="countdown-${event._id}"></span></p>
+      `;
+      updateCountdown(event._id, event.date);
+    }
+
+    function updateCountdown(id, date) {
+      const countdownElement = document.getElementById(`countdown-${id}`);
+      const eventDate = new Date(date).getTime();
+      setInterval(() => {
+        const now = new Date().getTime();
+        const distance = eventDate - now;
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        countdownElement.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        if (distance < 0) {
+          countdownElement.innerHTML = "EXPIRED";
+        }
+      }, 1000);
+    }
+
+    if (!localStorage.getItem('token')) {
+      window.location.href = '/index.html';
+    } else {
+      loadEvent();
+    }
+  </script>
+</body>
+</html>

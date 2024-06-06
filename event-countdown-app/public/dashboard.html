@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>Dashboard</h1>
+  <button id="logout-button">Logout</button>
+  <button id="create-event-button">Create New Event</button>
+
+  <div id="events-list">
+    <!-- Event items will be inserted here dynamically -->
+  </div>
+
+  <form id="countdown-form" style="display: none;">
+    <h2>Create Countdown</h2>
+    <input type="text" id="title" placeholder="Event Title" required>
+    <input type="text" id="description" placeholder="Description">
+    <input type="datetime-local" id="date" required>
+    <button type="submit">Create</button>
+    <button type="button" id="back-to-dashboard">Back to Dashboard</button>
+  </form>
+
+  <form id="update-form" style="display: none;">
+    <h2>Update Countdown</h2>
+    <input type="text" id="update-title" placeholder="Event Title" required>
+    <input type="text" id="update-description" placeholder="Description">
+    <input type="datetime-local" id="update-date" required>
+    <button type="submit">Update</button>
+    <button type="button" id="cancel-update">Cancel</button>
+  </form>
+
+  <script>
+    const countdownForm = document.getElementById('countdown-form');
+    const updateForm = document.getElementById('update-form');
+    const eventsList = document.getElementById('events-list');
+    const backToDashboardButton = document.getElementById('back-to-dashboard');
+    const cancelUpdateButton = document.getElementById('cancel-update');
+    let currentUpdateId = null;
+
+    async function loadEvents() {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/countdowns', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const events = await response.json();
+      console.log('Fetched events:', events);  // Debugging log
+      eventsList.innerHTML = '';
+      events.forEach(event => {
+        console.log('Rendering event:', event);  // Debugging log
+        const eventItem = document.createElement('div');
+        eventItem.className = 'event-item';
+        eventItem.innerHTML = `
+          <h3>${event.title}</h3>
+          <p>${event.description}</p>
+          <p>${new Date(event.date).toLocaleString()}</p>
+          <p>Time Remaining: <span id="countdown-${event._id}"></span></p>
+          <button onclick="viewEvent('${event._id}')">View</button>
+          <button onclick="editEvent('${event._id}', '${event.title}', '${event.description}', '${event.date}')">Edit</button>
+          <button onclick="deleteEvent('${event._id}')">Delete</button>
+        `;
+        eventsList.appendChild(eventItem);
+        updateCountdown(event._id, event.date);
+      });
+    }
+
+    function updateCountdown(id, date) {
+      const countdownElement = document.getElementById(`countdown-${id}`);
+      const eventDate = new Date(date).getTime();
+      setInterval(() => {
+        const now = new Date().getTime();
+        const distance = eventDate - now;
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        countdownElement.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        if (distance < 0) {
+          countdownElement.innerHTML = "EXPIRED";
+        }
+      }, 1000);
+    }
+
+    function showDashboard() {
+      countdownForm.style.display = 'none';
+      updateForm.style.display = 'none';
+      eventsList.style.display = 'block';
+      loadEvents();
+    }
+
+    function showForm(form) {
+      eventsList.style.display = 'none';
+      countdownForm.style.display = 'none';
+      updateForm.style.display = 'none';
+      form.style.display = 'block';
+    }
+
+    document.getElementById('logout-button').addEventListener('click', () => {
+      localStorage.removeItem('token');
+      window.location.href = '/index.html';
+    });
+
+    document.getElementById('create-event-button').addEventListener('click', () => {
+      showForm(countdownForm);
+    });
+
+    countdownForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = document.getElementById('title').value;
+      const description = document.getElementById('description').value;
+      const date = document.getElementById('date').value;
+      const token = localStorage.getItem('token');
+      const response = await fetch('/countdowns', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ title, description, date })
+      });
+      const data = await response.json();
+      if (data.title) {
+        alert('Countdown created successfully');
+        showDashboard();
+      } else {
+        alert('Failed to create countdown');
+      }
+    });
+
+    backToDashboardButton.addEventListener('click', () => {
+      showDashboard();
+    });
+
+    cancelUpdateButton.addEventListener('click', () => {
+      showDashboard();
+    });
+
+    async function editEvent(id, title, description, date) {
+      currentUpdateId = id;
+      document.getElementById('update-title').value = title;
+      document.getElementById('update-description').value = description;
+      document.getElementById('update-date').value = new Date(date).toISOString().slice(0, 16);
+      showForm(updateForm);
+    }
+
+    async function deleteEvent(id) {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/countdowns/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (data._id) {
+        alert('Countdown deleted successfully');
+        showDashboard();
+      } else {
+        alert('Failed to delete countdown');
+      }
+    }
+
+    updateForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = document.getElementById('update-title').value;
+      const description = document.getElementById('update-description').value;
+      const date = document.getElementById('update-date').value;
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/countdowns/${currentUpdateId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ title, description, date })
+      });
+      const data = await response.json();
+      if (data.title) {
+        alert('Countdown updated successfully');
+        showDashboard();
+      } else {
+        alert('Failed to update countdown');
+      }
+    });
+
+    function viewEvent(id) {
+      window.location.href = `/event.html?id=${id}`;
+    }
+
+    if (!localStorage.getItem('token')) {
+      window.location.href = '/index.html';
+    } else {
+      showDashboard();
+    }
+  </script>
+</body>
+</html>
