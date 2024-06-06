@@ -1,4 +1,4 @@
-const app = require('./app');
+const app = require('./event-countdown-app/src/app');
 const port = process.env.PORT || 3000;
 
 app.listen(port, () => {

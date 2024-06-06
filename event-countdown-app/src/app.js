@@ -7,11 +7,10 @@ const countdownRouter = require('./routes/countdownRoutes');
 const categoryRouter = require('./routes/categoryRoutes');
 
 // Connect to MongoDB
-mongoose.connect(config.dbUri, {
-  useNewUrlParser: true,
-  useCreateIndex: true,
-  useUnifiedTopology: true,
-  useFindAndModify: false
+mongoose.connect(config.dbUri).then(() => {
+  console.log('Connected to MongoDB');
+}).catch((error) => {
+  console.error('Error connecting to MongoDB:', error);
 });
 
 const app = express();
