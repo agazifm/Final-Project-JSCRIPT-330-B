@@ -9,42 +9,39 @@
 <body>
   <h1>Event Detail</h1>
   <button onclick="window.location.href='/dashboard.html'">Back to Dashboard</button>
-  <div id="event-detail">
-    <!-- Event details will be inserted here dynamically -->
-  </div>
-
-  <form id="notification-form" style="display: none;">
-    <h3>Create Notification</h3>
-    <input type="text" id="notification-message" placeholder="Notification Message" required>
-    <input type="datetime-local" id="notification-time" required>
-    <button type="submit">Create Notification</button>
+  <form id="countdown-form">
+    <h2>Edit Countdown</h2>
+    <input type="text" id="title" placeholder="Event Title" required>
+    <input type="text" id="description" placeholder="Description">
+    <input type="datetime-local" id="date" required>
+    <h3>Notifications</h3>
+    <div id="notifications-list">
+      <!-- Notification items will be inserted here dynamically -->
+    </div>
+    <button type="button" id="add-notification-button">Add Notification</button>
+    <button type="submit">Update</button>
+    <button type="button" id="cancel-update">Cancel</button>
   </form>
 
-  <div id="notifications-list">
-    <!-- Notification items will be inserted here dynamically -->
-  </div>
-
   <script>
+    let originalNotifications = [];
+
     async function loadEvent() {
       const params = new URLSearchParams(window.location.search);
       const id = params.get('id');
       const token = localStorage.getItem('token');
-      const response = await fetch(`/countdowns/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const event = await response.json();
-      const eventDetail = document.getElementById('event-detail');
-      eventDetail.innerHTML = `
-        <h2>${event.title}</h2>
-        <p>${event.description}</p>
-        <p>${new Date(event.date).toLocaleString()}</p>
-        <p>Time Remaining: <span id="countdown-${event._id}"></span></p>
-        <button onclick="showNotificationForm()">Add Notification</button>
-      `;
-      updateCountdown(event._id, event.date);
-      loadNotifications(event._id);
+      if (id) {
+        const response = await fetch(`/countdowns/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const event = await response.json();
+        document.getElementById('title').value = event.title;
+        document.getElementById('description').value = event.description;
+        document.getElementById('date').value = new Date(event.date).toISOString().slice(0, 16);
+        await loadNotifications(event._id);
+      }
     }
 
     async function loadNotifications(eventId) {
@@ -55,60 +52,118 @@
         }
       });
       const notifications = await response.json();
+      originalNotifications = notifications.map(n => ({ ...n })); // Store original notifications
       const notificationsList = document.getElementById('notifications-list');
-      notificationsList.innerHTML = '<h3>Notifications</h3>';
+      notificationsList.innerHTML = '';
       notifications.forEach(notification => {
         const notificationItem = document.createElement('div');
         notificationItem.className = 'notification-item';
         notificationItem.innerHTML = `
-          <p>${new Date(notification.time).toLocaleString()}: ${notification.message}</p>
+          <input type="text" class="notification-message" value="${notification.message}" required>
+          <input type="datetime-local" class="notification-time" value="${new Date(notification.sendAt).toISOString().slice(0, 16)}" required>
+          <button type="button" class="remove-notification-button">Remove</button>
         `;
         notificationsList.appendChild(notificationItem);
+
+        notificationItem.querySelector('.remove-notification-button').addEventListener('click', () => {
+          notificationItem.remove();
+        });
       });
     }
 
-    function updateCountdown(id, date) {
-      const countdownElement = document.getElementById(`countdown-${id}`);
-      const eventDate = new Date(date).getTime();
-      setInterval(() => {
-        const now = new Date().getTime();
-        const distance = eventDate - now;
-        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-        countdownElement.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
-        if (distance < 0) {
-          countdownElement.innerHTML = "EXPIRED";
-        }
-      }, 1000);
-    }
-
-    function showNotificationForm() {
-      document.getElementById('notification-form').style.display = 'block';
-    }
-
-    document.getElementById('notification-form').addEventListener('submit', async (e) => {
+    document.getElementById('countdown-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const params = new URLSearchParams(window.location.search);
       const id = params.get('id');
-      const message = document.getElementById('notification-message').value;
-      const time = document.getElementById('notification-time').value;
+      const title = document.getElementById('title').value;
+      const description = document.getElementById('description').value;
+      const date = document.getElementById('date').value;
       const token = localStorage.getItem('token');
-      const response = await fetch('/notifications', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ message, time, countdownId: id })
-      });
-      const data = await response.json();
-      if (data.message) {
-        alert('Notification created successfully');
-        loadNotifications(id);
+      let response;
+      if (id) {
+        response = await fetch(`/countdowns/${id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ title, description, date })
+        });
       } else {
-        alert('Failed to create notification');
+        response = await fetch('/countdowns', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ title, description, date })
+        });
+      }
+      const data = await response.json();
+      if (data.title) {
+        const notifications = [...document.querySelectorAll('#notifications-list .notification-item')].map(item => ({
+          message: item.querySelector('.notification-message').value,
+          sendAt: new Date(item.querySelector('.notification-time').value).toISOString(),
+          countdownId: data._id || id
+        }));
+
+        // Delete removed notifications
+        const removedNotifications = originalNotifications.filter(original => 
+          !notifications.some(newNotif => newNotif.message === original.message && newNotif.sendAt === original.sendAt)
+        );
+
+        await Promise.all(removedNotifications.map(async notification => {
+          await fetch(`/notifications/${notification._id}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+        }));
+
+        // Add or update notifications
+        await Promise.all(notifications.map(async notification => {
+          const existingNotification = originalNotifications.find(original => 
+            original.message === notification.message && original.sendAt === notification.sendAt
+          );
+          const method = existingNotification ? 'PATCH' : 'POST';
+          const url = existingNotification ? `/notifications/${existingNotification._id}` : `/notifications`;
+
+          await fetch(url, {
+            method,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(notification)
+          });
+        }));
+
+        alert('Countdown updated successfully');
+        window.location.href = '/dashboard.html';
+      } else {
+        alert('Failed to update countdown');
+      }
+    });
+
+    document.getElementById('add-notification-button').addEventListener('click', () => {
+      const notificationItem = document.createElement('div');
+      notificationItem.className = 'notification-item';
+      notificationItem.innerHTML = `
+        <input type="text" class="notification-message" placeholder="Notification Message" required>
+        <input type="datetime-local" class="notification-time" required>
+        <button type="button" class="remove-notification-button">Remove</button>
+      `;
+      document.getElementById('notifications-list').appendChild(notificationItem);
+
+      notificationItem.querySelector('.remove-notification-button').addEventListener('click', () => {
+        notificationItem.remove();
+      });
+    });
+
+    document.getElementById('cancel-update').addEventListener('click', () => {
+      if (confirm('Are you sure you want to discard the changes?')) {
+        window.location.href = '/dashboard.html';
       }
     });
 
@@ -117,7 +172,6 @@
     } else {
       loadEvent();
     }
-
   </script>
 </body>
 </html>

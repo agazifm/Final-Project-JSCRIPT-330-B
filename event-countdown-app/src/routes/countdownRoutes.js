@@ -83,18 +83,5 @@ router.delete('/countdowns/:id', auth, async (req, res) => {
   }
 });
 
-// Search Countdowns
-router.get('/countdowns/search/:query', auth, async (req, res) => {
-  const query = req.params.query;
-  try {
-    const countdowns = await Countdown.find({ 
-      $text: { $search: query }, 
-      owner: req.user._id 
-    });
-    res.send(countdowns);
-  } catch (e) {
-    res.status(500).send();
-  }
-});
 
 module.exports = router;
