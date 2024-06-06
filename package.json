@@ -4,19 +4,18 @@
     "description": "An application to create and track countdowns to important events.",
     "main": "server.js",
     "scripts": {
-      "start": "node server.js",
-      "test": "jest"
+        "start": "node server.js",
+        "test": "jest"
     },
     "author": "Your Name",
     "license": "ISC",
     "dependencies": {
-      "body-parser": "^1.19.0",
-      "express": "^4.17.1",
-      "mongoose": "^5.12.3"
+        "body-parser": "^1.19.0",
+        "express": "^4.17.1",
+        "mongoose": "^5.12.3"
     },
     "devDependencies": {
-      "jest": "^26.6.3",
-      "supertest": "^6.0.1"
+        "jest": "^26.6.3",
+        "supertest": "^6.3.4"
     }
-  }
-  
+}
