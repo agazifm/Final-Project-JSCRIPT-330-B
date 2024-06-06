@@ -49,10 +49,8 @@
         }
       });
       const events = await response.json();
-      console.log('Fetched events:', events);  // Debugging log
       eventsList.innerHTML = '';
       events.forEach(event => {
-        console.log('Rendering event:', event);  // Debugging log
         const eventItem = document.createElement('div');
         eventItem.className = 'event-item';
         eventItem.innerHTML = `
@@ -60,12 +58,34 @@
           <p>${event.description}</p>
           <p>${new Date(event.date).toLocaleString()}</p>
           <p>Time Remaining: <span id="countdown-${event._id}"></span></p>
+          <div id="notifications-${event._id}"></div>
           <button onclick="viewEvent('${event._id}')">View</button>
           <button onclick="editEvent('${event._id}', '${event.title}', '${event.description}', '${event.date}')">Edit</button>
           <button onclick="deleteEvent('${event._id}')">Delete</button>
         `;
         eventsList.appendChild(eventItem);
         updateCountdown(event._id, event.date);
+        loadNotifications(event._id);
+      });
+    }
+
+    async function loadNotifications(eventId) {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/notifications?countdownId=${eventId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const notifications = await response.json();
+      const notificationsDiv = document.getElementById(`notifications-${eventId}`);
+      notificationsDiv.innerHTML = '<h4>Notifications</h4>';
+      notifications.forEach(notification => {
+        const notificationItem = document.createElement('div');
+        notificationItem.className = 'notification-item';
+        notificationItem.innerHTML = `
+          <p>${new Date(notification.time).toLocaleString()}: ${notification.message}</p>
+        `;
+        notificationsDiv.appendChild(notificationItem);
       });
     }
 
@@ -82,6 +102,8 @@
         countdownElement.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
         if (distance < 0) {
           countdownElement.innerHTML = "EXPIRED";
+          alert('Event Ended: ' + document.querySelector(`#countdown-${id}`).closest('.event-item').querySelector('h3').textContent);
+          deleteEvent(id);
         }
       }, 1000);
     }
@@ -146,6 +168,33 @@
       document.getElementById('update-description').value = description;
       document.getElementById('update-date').value = new Date(date).toISOString().slice(0, 16);
       showForm(updateForm);
+      loadUpdateNotifications(id);
+    }
+
+    async function loadUpdateNotifications(eventId) {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/notifications?countdownId=${eventId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const notifications = await response.json();
+      const updateRemindersList = document.getElementById('update-reminders-list');
+      updateRemindersList.innerHTML = '';
+      notifications.forEach(notification => {
+        const notificationItem = document.createElement('div');
+        notificationItem.className = 'reminder-item';
+        notificationItem.innerHTML = `
+          <input type="text" class="reminder-message" value="${notification.message}" required>
+          <input type="datetime-local" class="reminder-time" value="${new Date(notification.time).toISOString().slice(0, 16)}" required>
+          <button type="button" class="remove-reminder-button">Remove</button>
+        `;
+        updateRemindersList.appendChild(notificationItem);
+
+        notificationItem.querySelector('.remove-reminder-button').addEventListener('click', () => {
+          notificationItem.remove();
+        });
+      });
     }
 
     async function deleteEvent(id) {
@@ -181,6 +230,21 @@
       });
       const data = await response.json();
       if (data.title) {
+        const notifications = [...document.querySelectorAll('.reminder-item')].map(item => ({
+          message: item.querySelector('.reminder-message').value,
+          time: item.querySelector('.reminder-time').value,
+          countdownId: currentUpdateId
+        }));
+        await Promise.all(notifications.map(async notification => {
+          await fetch(`/notifications/${notification.countdownId}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(notification)
+          });
+        }));
         alert('Countdown updated successfully');
         showDashboard();
       } else {

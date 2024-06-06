@@ -13,6 +13,17 @@
     <!-- Event details will be inserted here dynamically -->
   </div>
 
+  <form id="notification-form" style="display: none;">
+    <h3>Create Notification</h3>
+    <input type="text" id="notification-message" placeholder="Notification Message" required>
+    <input type="datetime-local" id="notification-time" required>
+    <button type="submit">Create Notification</button>
+  </form>
+
+  <div id="notifications-list">
+    <!-- Notification items will be inserted here dynamically -->
+  </div>
+
   <script>
     async function loadEvent() {
       const params = new URLSearchParams(window.location.search);
@@ -30,8 +41,30 @@
         <p>${event.description}</p>
         <p>${new Date(event.date).toLocaleString()}</p>
         <p>Time Remaining: <span id="countdown-${event._id}"></span></p>
+        <button onclick="showNotificationForm()">Add Notification</button>
       `;
       updateCountdown(event._id, event.date);
+      loadNotifications(event._id);
+    }
+
+    async function loadNotifications(eventId) {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/notifications?countdownId=${eventId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const notifications = await response.json();
+      const notificationsList = document.getElementById('notifications-list');
+      notificationsList.innerHTML = '<h3>Notifications</h3>';
+      notifications.forEach(notification => {
+        const notificationItem = document.createElement('div');
+        notificationItem.className = 'notification-item';
+        notificationItem.innerHTML = `
+          <p>${new Date(notification.time).toLocaleString()}: ${notification.message}</p>
+        `;
+        notificationsList.appendChild(notificationItem);
+      });
     }
 
     function updateCountdown(id, date) {
@@ -51,11 +84,40 @@
       }, 1000);
     }
 
+    function showNotificationForm() {
+      document.getElementById('notification-form').style.display = 'block';
+    }
+
+    document.getElementById('notification-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      const message = document.getElementById('notification-message').value;
+      const time = document.getElementById('notification-time').value;
+      const token = localStorage.getItem('token');
+      const response = await fetch('/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ message, time, countdownId: id })
+      });
+      const data = await response.json();
+      if (data.message) {
+        alert('Notification created successfully');
+        loadNotifications(id);
+      } else {
+        alert('Failed to create notification');
+      }
+    });
+
     if (!localStorage.getItem('token')) {
       window.location.href = '/index.html';
     } else {
       loadEvent();
     }
+
   </script>
 </body>
 </html>

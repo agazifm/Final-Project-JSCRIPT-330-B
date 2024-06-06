@@ -4,7 +4,7 @@ const path = require('path');
 const config = require('./config');
 const userRouter = require('./routes/userRoutes');
 const countdownRouter = require('./routes/countdownRoutes');
-const categoryRouter = require('./routes/categoryRoutes');
+const notificationRouter = require('./routes/notificationRoutes');
 
 // Connect to MongoDB
 mongoose.connect(config.dbUri).then(() => {
@@ -18,7 +18,7 @@ const app = express();
 app.use(express.json());
 app.use(userRouter);
 app.use(countdownRouter);
-app.use(categoryRouter);
+app.use(notificationRouter);
 
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, '../public')));
