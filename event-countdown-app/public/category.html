@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Categories</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>Manage Categories</h1>
+  <button onclick="window.location.href='/dashboard.html'">Back to Dashboard</button>
+
+  <form id="category-form">
+    <h2>Create Category</h2>
+    <input type="text" id="category-name" placeholder="Category Name" required>
+    <button type="submit">Create</button>
+  </form>
+
+  <div id="categories-list">
+    <!-- Categories will be listed here with checkboxes -->
+  </div>
+  <button id="delete-category-button" style="display: none;">Delete Selected Categories</button>
+
+  <script>
+    const categoryForm = document.getElementById('category-form');
+    const categoriesList = document.getElementById('categories-list');
+    const deleteCategoryButton = document.getElementById('delete-category-button');
+
+    categoryForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('category-name').value;
+      const token = localStorage.getItem('token');
+      const response = await fetch('/categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ name })
+      });
+      if (response.ok) {
+        await loadCategories();
+        categoryForm.reset();
+      } else {
+        alert('Failed to create category');
+      }
+    });
+
+    async function deleteCategory() {
+      const confirmation = confirm('Are you sure you want to delete the selected categories and all associated events?');
+      if (!confirmation) {
+        return;
+      }
+      const token = localStorage.getItem('token');
+      const checkboxes = document.querySelectorAll('#categories-list input[type="checkbox"]:checked');
+      const deletePromises = Array.from(checkboxes).map(checkbox => {
+        const categoryId = checkbox.value;
+        return fetch(`/categories/${categoryId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      });
+      await Promise.all(deletePromises);
+      alert('Selected categories and associated events deleted successfully');
+      await loadCategories();
+    }
+
+    async function loadCategories() {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/categories', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const categories = await response.json();
+      categoriesList.innerHTML = '';
+      categories.forEach(category => {
+        const categoryItem = document.createElement('div');
+        categoryItem.className = 'category-item';
+        categoryItem.innerHTML = `
+          <input type="checkbox" value="${category._id}">
+          <label>${category.name}</label>
+        `;
+        categoriesList.appendChild(categoryItem);
+      });
+      deleteCategoryButton.style.display = categories.length ? 'block' : 'none';
+    }
+
+    deleteCategoryButton.addEventListener('click', deleteCategory);
+
+    if (!localStorage.getItem('token')) {
+      window.location.href = '/index.html';
+    } else {
+      loadCategories();
+    }
+  </script>
+</body>
+</html>

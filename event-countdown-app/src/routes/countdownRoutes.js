@@ -3,33 +3,40 @@ const Countdown = require('../models/countdown');
 const auth = require('../middleware/auth');
 const router = new express.Router();
 
-// Create Countdown
+// Create a new countdown
 router.post('/countdowns', auth, async (req, res) => {
   const countdown = new Countdown({
     ...req.body,
     owner: req.user._id
   });
+  console.log('Creating countdown:', countdown); // Add this line to log the countdown being created
+
   try {
     await countdown.save();
-    req.user.countdowns = req.user.countdowns.concat(countdown._id);
-    await req.user.save();
     res.status(201).send(countdown);
   } catch (e) {
     res.status(400).send(e);
   }
 });
 
+
 // Read all Countdowns
 router.get('/countdowns', auth, async (req, res) => {
+  const { categoryId } = req.query;
+  const query = { owner: req.user._id };
+  if (categoryId) {
+    query.categoryId = categoryId;
+  }
+  console.log('Query:', query); // This should log the query being executed
   try {
-    await req.user.populate('countdowns');
-    console.log('Populated countdowns:', req.user.countdowns);  // Debugging log
-    res.send(req.user.countdowns);
+    const countdowns = await Countdown.find(query);
+    console.log('Populated countdowns:', countdowns); // This should log the countdowns returned by the query
+    res.send(countdowns);
   } catch (e) {
-    console.error(e);  // Error logging
     res.status(500).send();
   }
 });
+
 
 
 // Read Countdown by ID

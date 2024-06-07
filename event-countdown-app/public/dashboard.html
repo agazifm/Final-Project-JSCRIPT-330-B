@@ -10,6 +10,15 @@
   <h1>Dashboard</h1>
   <button id="logout-button">Logout</button>
   <button id="create-event-button">Create New Event</button>
+  <button id="manage-categories-button">Manage Categories</button>
+
+  <div>
+    <label for="category-filter">Filter by Category:</label>
+    <select id="category-filter">
+      <option value="all">All</option>
+      <!-- Dynamically populate category options here -->
+    </select>
+  </div>
 
   <div id="events-list">
     <!-- Event items will be inserted here dynamically -->
@@ -20,33 +29,54 @@
     <input type="text" id="title" placeholder="Event Title" required>
     <input type="text" id="description" placeholder="Description">
     <input type="datetime-local" id="date" required>
+    <select id="category" required>
+      <!-- Dynamically populate category options here -->
+    </select>
     <button type="submit">Create</button>
     <button type="button" id="back-to-dashboard">Back to Dashboard</button>
   </form>
 
-  <form id="update-form" style="display: none;">
-    <h2>Update Countdown</h2>
-    <input type="text" id="update-title" placeholder="Event Title" required>
-    <input type="text" id="update-description" placeholder="Description">
-    <input type="datetime-local" id="update-date" required>
-    <button type="submit">Update</button>
-    <button type="button" id="cancel-update">Cancel</button>
-  </form>
-
   <script>
     const countdownForm = document.getElementById('countdown-form');
-    const updateForm = document.getElementById('update-form');
     const eventsList = document.getElementById('events-list');
     const backToDashboardButton = document.getElementById('back-to-dashboard');
-    const cancelUpdateButton = document.getElementById('cancel-update');
-    let currentUpdateId = null;
 
     async function loadEvents() {
+<<<<<<< Updated upstream
   console.log("loadEvents function called"); // Log function call
   const token = localStorage.getItem('token');
   const response = await fetch('/countdowns', {
     headers: {
       'Authorization': `Bearer ${token}`
+=======
+      const token = localStorage.getItem('token');
+      const categoryFilter = document.getElementById('category-filter').value;
+      let url = '/countdowns';
+      if (categoryFilter !== 'all') {
+        url += `?categoryId=${categoryFilter}`;
+      }
+      console.log('Fetching events from URL:', url);
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const events = await response.json();
+      eventsList.innerHTML = '';
+      events.forEach(event => {
+        const eventItem = document.createElement('div');
+        eventItem.className = 'event-item';
+        eventItem.innerHTML = `
+          <h3>${event.title}</h3>
+          <p>${event.description}</p>
+          <p>${new Date(event.date).toLocaleString()}</p>
+          <p>Time Remaining: <span id="countdown-${event._id}"></span></p>
+          <button onclick="viewEvent('${event._id}')">View</button>
+          <button onclick="deleteEvent('${event._id}')">Delete</button>
+        `;
+        eventsList.appendChild(eventItem);
+      });
+>>>>>>> Stashed changes
     }
   });
   const events = await response.json();
@@ -71,6 +101,7 @@
   });
 }
 
+<<<<<<< Updated upstream
 document.addEventListener('DOMContentLoaded', () => {
   if (!localStorage.getItem('token')) {
     window.location.href = '/index.html';
@@ -131,17 +162,18 @@ async function loadNotifications(eventId) {
       }, 1000);
     }
 
+=======
+>>>>>>> Stashed changes
     function showDashboard() {
       countdownForm.style.display = 'none';
-      updateForm.style.display = 'none';
       eventsList.style.display = 'block';
       loadEvents();
+      loadCategories();
     }
 
     function showForm(form) {
       eventsList.style.display = 'none';
       countdownForm.style.display = 'none';
-      updateForm.style.display = 'none';
       form.style.display = 'block';
     }
 
@@ -154,11 +186,16 @@ async function loadNotifications(eventId) {
       showForm(countdownForm);
     });
 
+    document.getElementById('manage-categories-button').addEventListener('click', () => {
+      window.location.href = '/category.html';
+    });
+
     countdownForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const title = document.getElementById('title').value;
       const description = document.getElementById('description').value;
       const date = document.getElementById('date').value;
+      const categoryId = document.getElementById('category').value;
       const token = localStorage.getItem('token');
       const response = await fetch('/countdowns', {
         method: 'POST',
@@ -166,7 +203,7 @@ async function loadNotifications(eventId) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ title, description, date })
+        body: JSON.stringify({ title, description, date, categoryId })
       });
       const data = await response.json();
       if (data.title) {
@@ -181,6 +218,7 @@ async function loadNotifications(eventId) {
       showDashboard();
     });
 
+<<<<<<< Updated upstream
     cancelUpdateButton.addEventListener('click', () => {
       showDashboard();
     });
@@ -214,6 +252,8 @@ async function loadNotifications(eventId) {
       });
     }
 
+=======
+>>>>>>> Stashed changes
     async function deleteEvent(id) {
   if (!confirm('Are you sure you want to delete this event?')) {
     return;
@@ -234,51 +274,39 @@ async function loadNotifications(eventId) {
   }
 }
 
-    updateForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const title = document.getElementById('update-title').value;
-      const description = document.getElementById('update-description').value;
-      const date = document.getElementById('update-date').value;
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/countdowns/${currentUpdateId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ title, description, date })
-      });
-      const data = await response.json();
-      if (data.title) {
-        const notifications = [...document.querySelectorAll('.reminder-item')].map(item => ({
-          message: item.querySelector('.reminder-message').value,
-          time: item.querySelector('.reminder-time').value,
-          countdownId: currentUpdateId
-        }));
-        await Promise.all(notifications.map(async notification => {
-          await fetch(`/notifications/${notification.countdownId}`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(notification)
-          });
-        }));
-        alert('Countdown updated successfully');
-        showDashboard();
-      } else {
-        alert('Failed to update countdown');
-      }
-    });
-
     function viewEvent(id) {
       window.location.href = `/event.html?id=${id}`;
     }
 
+    async function loadCategories() {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/categories', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const categories = await response.json();
+      const categoryFilter = document.getElementById('category-filter');
+      const categorySelect = document.getElementById('category');
+      categoryFilter.innerHTML = '<option value="all">All</option>';
+      categorySelect.innerHTML = '';
+      categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category._id;
+        option.textContent = category.name;
+        categoryFilter.appendChild(option);
+
+        const optionClone = option.cloneNode(true);
+        categorySelect.appendChild(optionClone);
+      });
+    }
+
+    document.getElementById('category-filter').addEventListener('change', loadEvents);
+
     if (!localStorage.getItem('token')) {
       window.location.href = '/index.html';
     } else {
+      loadCategories();
       showDashboard();
     }
     
