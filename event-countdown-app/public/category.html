@@ -5,10 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manage Categories</title>
   <link rel="stylesheet" href="styles.css">
+  <style>
+    .back-to-dashboard {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+    }
+  </style>
 </head>
 <body>
   <h1>Manage Categories</h1>
-  <button onclick="window.location.href='/dashboard.html'">Back to Dashboard</button>
 
   <form id="category-form">
     <h2>Create Category</h2>
@@ -20,6 +26,7 @@
     <!-- Categories will be listed here with checkboxes -->
   </div>
   <button id="delete-category-button" style="display: none;">Delete Selected Categories</button>
+  <button onclick="window.location.href='/dashboard.html'" class="back-to-dashboard">Back to Dashboard</button>
 
   <script>
     const categoryForm = document.getElementById('category-form');

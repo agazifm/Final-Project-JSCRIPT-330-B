@@ -5,6 +5,7 @@ const Category = require('../models/category');
 
 // Create a new category
 router.post('/categories', auth, async (req, res) => {
+  console.log('Request to create category:', req.body); // Log the request body
   const category = new Category({
     ...req.body,
     owner: req.user._id
@@ -14,9 +15,11 @@ router.post('/categories', auth, async (req, res) => {
     await category.save();
     res.status(201).send(category);
   } catch (e) {
-    res.status(400).send(e);
+    console.error('Error creating category:', e); // Log the full error
+    res.status(400).send({ error: e.message });
   }
 });
+
 
 // Get all categories
 router.get('/categories', auth, async (req, res) => {
@@ -53,24 +56,21 @@ router.patch('/categories/:id', auth, async (req, res) => {
   }
 });
 
-// Delete a category and associated countdowns
+// Delete category and associated countdowns
 router.delete('/categories/:id', auth, async (req, res) => {
-  const categoryId = req.params.id;
-
+  const _id = req.params.id;
   try {
-    // Delete countdowns associated with the category
-    await Countdown.deleteMany({ categoryId, owner: req.user._id });
-
-    // Delete the category
-    const category = await Category.findOneAndDelete({ _id: categoryId, owner: req.user._id });
-
+    const category = await Category.findOneAndDelete({ _id, owner: req.user._id });
     if (!category) {
-      return res.status(404).send({ error: 'Category not found' });
+      return res.status(404).send({ message: 'Category not found' });
     }
 
-    res.send({ message: 'Category and associated countdowns deleted' });
+    // Delete associated countdowns
+    await Countdown.deleteMany({ categoryId: _id, owner: req.user._id });
+
+    res.send({ message: 'Category and associated events deleted successfully' });
   } catch (e) {
-    res.status(500).send({ error: 'Failed to delete category' });
+    res.status(500).send({ error: e.message });
   }
 });
 

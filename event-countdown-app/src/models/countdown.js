@@ -27,7 +27,12 @@ const countdownSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Text index for title and description for text search
 countdownSchema.index({ title: 'text', description: 'text' });
+// Index for date for performance
+countdownSchema.index({ date: 1 });
+// Unique index for title within the same owner
+countdownSchema.index({ title: 1, owner: 1 }, { unique: true });
 
 const Countdown = mongoose.model('Countdown', countdownSchema);
 module.exports = Countdown;
