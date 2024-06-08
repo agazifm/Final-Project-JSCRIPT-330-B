@@ -72,11 +72,11 @@ router.get('/countdowns/:id', auth, async (req, res) => {
   }
 });
 
-// Update Countdown
+// Update a countdown
 router.patch('/countdowns/:id', auth, async (req, res) => {
   const updates = Object.keys(req.body);
   const allowedUpdates = ['title', 'description', 'date', 'categoryId'];
-  const isValidOperation = updates.every((update) => allowedUpdates.includes(update));
+  const isValidOperation = updates.every(update => allowedUpdates.includes(update));
 
   if (!isValidOperation) {
     return res.status(400).send({ error: 'Invalid updates!' });
@@ -84,17 +84,19 @@ router.patch('/countdowns/:id', auth, async (req, res) => {
 
   try {
     const countdown = await Countdown.findOne({ _id: req.params.id, owner: req.user._id });
+
     if (!countdown) {
       return res.status(404).send();
     }
 
-    updates.forEach((update) => (countdown[update] = req.body[update]));
+    updates.forEach(update => countdown[update] = req.body[update]);
     await countdown.save();
     res.send(countdown);
   } catch (e) {
     res.status(400).send(e);
   }
 });
+
 
 // Delete Countdown
 router.delete('/countdowns/:id', auth, async (req, res) => {
