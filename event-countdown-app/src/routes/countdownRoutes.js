@@ -97,7 +97,6 @@ router.patch('/countdowns/:id', auth, async (req, res) => {
   }
 });
 
-
 // Delete Countdown
 router.delete('/countdowns/:id', auth, async (req, res) => {
   try {
