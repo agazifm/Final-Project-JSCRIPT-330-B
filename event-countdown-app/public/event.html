@@ -15,6 +15,9 @@
 </head>
 <body>
   <h1>Event Detail</h1>
+  <div id="event-detail">
+    <!-- Event details will be inserted here dynamically -->
+  </div>
 
   <form id="countdown-form" style="display: none;">
     <h2>Create Countdown</h2>
@@ -25,6 +28,8 @@
       <!-- Dynamically populate category options here -->
     </select>
     <button type="submit">Create</button>
+    <input type="text" id="new-category" placeholder="New Category Name" style="display: none;">
+    <button type="button" id="create-category-button">Create New Category</button>
   </form>
 
   <form id="edit-category-form">
@@ -46,6 +51,8 @@
     const descriptionInput = document.getElementById('description');
     const dateInput = document.getElementById('date');
     const categorySelect = document.getElementById('category');
+    const newCategoryInput = document.getElementById('new-category');
+    const createCategoryButton = document.getElementById('create-category-button');
     let currentEventId = null;
 
     async function loadEvent() {
@@ -90,13 +97,59 @@
         const option = document.createElement('option');
         option.value = category._id;
         option.textContent = category.name;
-        if (category._id === selectedCategoryId) {
-          option.selected = true;
-        }
-        editCategorySelect.appendChild(option);
+        editCategorySelect.appendChild(option.cloneNode(true));
         categorySelect.appendChild(option.cloneNode(true));
       });
+
+      if (selectedCategoryId) {
+        editCategorySelect.value = selectedCategoryId;
+      }
     }
+
+    createCategoryButton.addEventListener('click', () => {
+      newCategoryInput.style.display = 'block';
+    });
+
+    countdownForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      let categoryId = categorySelect.value;
+      const newCategoryName = newCategoryInput.value;
+      const token = localStorage.getItem('token');
+
+      if (newCategoryName) {
+        const response = await fetch('/categories', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ name: newCategoryName })
+        });
+        const newCategory = await response.json();
+        categoryId = newCategory._id;
+      }
+
+      const title = titleInput.value;
+      const description = descriptionInput.value;
+      const date = dateInput.value;
+
+      const response = await fetch('/countdowns', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ title, description, date, categoryId })
+      });
+
+      const data = await response.json();
+      if (data.title) {
+        alert('Countdown created successfully');
+        window.location.href = `/event.html?id=${data._id}`;
+      } else {
+        alert('Failed to create countdown');
+      }
+    });
 
     editCategoryForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -115,30 +168,6 @@
         loadEvent();
       } else {
         alert('Failed to change category');
-      }
-    });
-
-    countdownForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const title = titleInput.value;
-      const description = descriptionInput.value;
-      const date = dateInput.value;
-      const categoryId = categorySelect.value;
-      const token = localStorage.getItem('token');
-      const response = await fetch('/countdowns', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ title, description, date, categoryId })
-      });
-      const data = await response.json();
-      if (data.title) {
-        alert('Countdown created successfully');
-        window.location.href = `/event.html?id=${data._id}`;
-      } else {
-        alert('Failed to create countdown');
       }
     });
 
