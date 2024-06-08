@@ -1,5 +1,6 @@
 const express = require('express');
 const Countdown = require('../models/countdown');
+const Category = require('../models/category');
 const auth = require('../middleware/auth');
 const router = new express.Router();
 
@@ -37,6 +38,24 @@ router.get('/countdowns', auth, async (req, res) => {
   }
 });
 
+// Aggregation: Find the nearest event for the user
+router.get('/countdowns/aggregations/nearest-event', auth, async (req, res) => {
+  try {
+    const result = await Countdown.aggregate([
+      { $match: { owner: req.user._id } },
+      { $sort: { date: 1 } },
+      { $limit: 1 }
+    ]);
+    if (result.length > 0) {
+      res.send(result[0]);
+    } else {
+      res.send({ message: 'No upcoming events.' });
+    }
+  } catch (e) {
+    console.error('Aggregation error:', e);
+    res.status(500).send();
+  }
+});
 
 
 // Read Countdown by ID
@@ -89,8 +108,5 @@ router.delete('/countdowns/:id', auth, async (req, res) => {
     res.status(500).send();
   }
 });
-
-
-
 
 module.exports = router;
