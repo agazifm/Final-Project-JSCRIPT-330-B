@@ -5,17 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard</title>
   <link rel="stylesheet" href="styles.css">
+  <style>
+  </style>
 </head>
 <body>
   <h1>Dashboard</h1>
   <button id="logout-button">Logout</button>
   <button id="manage-categories-button">Manage Categories</button>
   <button id="create-event-button">Create New Event</button>
-  
 
-  <div id="nearest-event" style="margin-bottom: 20px;">
-    <!-- Nearest event countdown will be displayed here -->
-  </div>
+  <form id="nearest-event-form">
+    <div id="nearest-event" style="margin-bottom: 20px;">
+      <!-- Nearest event countdown will be displayed here -->
+    </div>
+
+    <div id="countdown-clock" class="clock">
+      <div class="time" id="days">00</div>
+      <div class="label">Days</div>
+      <div class="separator">:</div>
+      <div class="time" id="hours">00</div>
+      <div class="label">Hours</div>
+      <div class="separator">:</div>
+      <div class="time" id="minutes">00</div>
+      <div class="label">Minutes</div>
+      <div class="separator">:</div>
+      <div class="time" id="seconds">00</div>
+      <div class="label">Seconds</div>
+    </div>
+  </form>
 
   <div>
     <label for="category-filter">Filter by Category:</label>
@@ -29,56 +46,73 @@
     <!-- Event items will be inserted here dynamically -->
   </div>
   <div id="notification-area" style="position: fixed; top: 20px; right: 20px; z-index: 1000;"></div>
-  <script>
 
-    const eventModal = document.getElementById('event-modal');
-    const modalMessage = document.getElementById('modal-message');
-    const modalClose = document.getElementsByClassName('modal-close')[0];
+  <script>
     const nearestEventDiv = document.getElementById('nearest-event');
+    const countdownClock = document.getElementById('countdown-clock');
     const eventsList = document.getElementById('events-list');
 
     async function loadNearestEvent() {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/countdowns/aggregations/nearest-event`, {
+      const response = await fetch('/countdowns/aggregations/nearest-event', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       if (!response.ok) {
         console.error('Failed to fetch nearest event:', response.statusText);
-        nearestEventDiv.innerHTML = '<p>No upcoming events.</p>';
+        nearestEventDiv.innerHTML = '';
+        countdownClock.style.display = 'none';
         return;
       }
       const nearestEvent = await response.json();
       console.log('Nearest event data:', nearestEvent);
       if (!nearestEvent) {
-        nearestEventDiv.innerHTML = '<p>No upcoming events.</p>';
+        nearestEventDiv.innerHTML = '';
+        countdownClock.style.display = 'none';
         return;
       }
       const eventDate = new Date(nearestEvent.date).getTime();
       nearestEventDiv.innerHTML = `
         <h2>Nearest Event: ${nearestEvent.title}</h2>
         <p>${nearestEvent.description}</p>
-        <p>Time Remaining: <span id="nearest-event-countdown"></span></p>
       `;
-      updateNearestEventCountdown(eventDate);
+      countdownClock.style.display = 'flex';
+      startClock(eventDate);
     }
 
-    function updateNearestEventCountdown(date) {
-      const countdownElement = document.getElementById('nearest-event-countdown');
-      const eventDate = new Date(date).getTime();
-      setInterval(() => {
+    function startClock(eventDate) {
+      const daysElem = document.getElementById('days');
+      const hoursElem = document.getElementById('hours');
+      const minutesElem = document.getElementById('minutes');
+      const secondsElem = document.getElementById('seconds');
+
+      function updateClock() {
         const now = new Date().getTime();
         const distance = eventDate - now;
+
+        if (distance < 0) {
+          clearInterval(interval);
+          daysElem.innerHTML = '00';
+          hoursElem.innerHTML = '00';
+          minutesElem.innerHTML = '00';
+          secondsElem.innerHTML = '00';
+          return;
+        }
+
         const days = Math.floor(distance / (1000 * 60 * 60 * 24));
         const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-        countdownElement.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
-        if (distance < 0) {
-          countdownElement.innerHTML = "EXPIRED";
-        }
-      }, 1000);
+
+        daysElem.innerHTML = String(days).padStart(2, '0');
+        hoursElem.innerHTML = String(hours).padStart(2, '0');
+        minutesElem.innerHTML = String(minutes).padStart(2, '0');
+        secondsElem.innerHTML = String(seconds).padStart(2, '0');
+      }
+
+      updateClock(); // Initial call to display clock immediately
+      const interval = setInterval(updateClock, 1000);
     }
 
     async function loadEvents() {
@@ -114,55 +148,55 @@
     }
 
     function updateCountdown(id, date) {
-  const countdownElement = document.getElementById(`countdown-${id}`);
-  const eventDate = new Date(date).getTime();
-  const interval = setInterval(() => {
-    const now = new Date().getTime();
-    const distance = eventDate - now;
-    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-    countdownElement.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
-    if (distance < 0) {
-      clearInterval(interval);
-      countdownElement.innerHTML = "EXPIRED";
-      showModal('Event Ended: ' + document.querySelector(`#countdown-${id}`).closest('.event-item').querySelector('h3').textContent);
-      deleteEvent(id);
+      const countdownElement = document.getElementById(`countdown-${id}`);
+      const eventDate = new Date(date).getTime();
+      const interval = setInterval(() => {
+        const now = new Date().getTime();
+        const distance = eventDate - now;
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        countdownElement.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        if (distance < 0) {
+          clearInterval(interval);
+          countdownElement.innerHTML = "EXPIRED";
+          showModal('Event Ended: ' + document.querySelector(`#countdown-${id}`).closest('.event-item').querySelector('h3').textContent);
+          deleteEvent(id);
+        }
+      }, 1000);
     }
-  }, 1000);
-}
 
-
-async function deleteEvent(id) {
-  const token = localStorage.getItem('token');
-  const response = await fetch(`/countdowns/${id}`, {
-    method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${token}`
+    async function deleteEvent(id) {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/countdowns/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (data._id) {
+        alert('Countdown deleted successfully');
+        location.reload(); // Refresh the page
+      } else {
+        alert('Failed to delete countdown');
+      }
     }
-  });
-  const data = await response.json();
-  if (data._id) {
-    console.log('Countdown deleted successfully');
-  } else {
-    console.log('Failed to delete countdown');
-  }
-}
 
-function showNotification(message) {
-  const notification = document.createElement('div');
-  notification.className = 'notification';
-  notification.style = 'background-color: #4caf50; color: white; padding: 10px; margin: 5px; border-radius: 5px;';
-  notification.innerText = message;
+    function showNotification(message) {
+      const notification = document.createElement('div');
+      notification.className = 'notification';
+      notification.style = 'background-color: #4caf50; color: white; padding: 10px; margin: 5px; border-radius: 5px;';
+      notification.innerText = message;
 
-  const notificationArea = document.getElementById('notification-area');
-  notificationArea.appendChild(notification);
+      const notificationArea = document.getElementById('notification-area');
+      notificationArea.appendChild(notification);
 
-  setTimeout(() => {
-    notification.remove();
-  }, 3000); // Remove notification after 3 seconds
-}
+      setTimeout(() => {
+        notification.remove();
+      }, 3000); // Remove notification after 3 seconds
+    }
 
     function showDashboard() {
       eventsList.style.display = 'block';
@@ -183,25 +217,6 @@ function showNotification(message) {
     document.getElementById('manage-categories-button').addEventListener('click', () => {
       window.location.href = '/category.html';
     });
-
-    async function deleteEvent(id) {
-  const token = localStorage.getItem('token');
-  const response = await fetch(`/countdowns/${id}`, {
-    method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
-  });
-  const data = await response.json();
-  if (data._id) {
-    alert('Countdown deleted successfully');
-    // Re-load the events and nearest event
-    loadEvents();
-    loadNearestEvent();
-  } else {
-    alert('Failed to delete countdown');
-  }
-}
 
     function viewEvent(id) {
       window.location.href = `/event.html?id=${id}`;
@@ -232,7 +247,6 @@ function showNotification(message) {
     } else {
       showDashboard();
     }
-
   </script>
 </body>
 </html>
