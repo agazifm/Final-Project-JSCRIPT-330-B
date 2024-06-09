@@ -6,39 +6,81 @@
   <title>Manage Categories</title>
   <link rel="stylesheet" href="styles.css">
   <style>
-    .back-to-dashboard, .create-event {
+    .back-to-dashboard {
       position: fixed;
       bottom: 20px;
-    }
-    .back-to-dashboard {
       right: 20px;
-    }
-    .create-event {
-      left: 20px;
     }
   </style>
 </head>
 <body>
-  <h1>Manage Categories</h1>
+  <h1>Manage Categories/Rework this for user</h1>
+
   <form id="category-form">
     <h2>Create Category</h2>
     <input type="text" id="category-name" placeholder="Category Name" required>
     <button type="submit">Create</button>
   </form>
-
-  <h2>Existing Categories</h2>
-  <div id="categories-list">
-    <!-- Categories will be inserted here dynamically -->
-  </div>
-  <button id="delete-category-button">Delete Selected Category</button>
+  <form>
+    <div id="categories-list">
+        <!-- Categories will be listed here with checkboxes -->
+    </div>
+    <button id="delete-category-button" style="display: none;">Delete Selected Categories</button>
+   </form>
   <button onclick="window.location.href='/dashboard.html'" class="back-to-dashboard">Back to Dashboard</button>
-  <button onclick="window.location.href='/event.html'" class="create-event">Create Event</button>
 
   <script>
     const categoryForm = document.getElementById('category-form');
     const categoriesList = document.getElementById('categories-list');
     const deleteCategoryButton = document.getElementById('delete-category-button');
-    let selectedCategoryId = null;
+
+    categoryForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('category-name').value;
+      const token = localStorage.getItem('token');
+      try {
+        const response = await fetch('/categories', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ name })
+        });
+        const responseData = await response.json();
+        console.log('Create category response:', responseData); // Log the full response
+        if (response.ok) {
+          await loadCategories();
+          categoryForm.reset();
+        } else {
+          alert(`Failed to create category: ${responseData.error || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error('Error creating category:', error); // Log the caught error
+        alert(`Failed to create category: ${error.message}`);
+      }
+    });
+
+    async function deleteCategory() {
+      const confirmation = confirm('Are you sure you want to delete the selected categories and all associated events?');
+      if (!confirmation) {
+        return;
+      }
+      const token = localStorage.getItem('token');
+      const checkboxes = document.querySelectorAll('#categories-list input[type="checkbox"]:checked');
+      const deletePromises = Array.from(checkboxes).map(checkbox => {
+        const categoryId = checkbox.value;
+        return fetch(`/categories/${categoryId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      });
+      await Promise.all(deletePromises);
+      alert('Selected categories and associated events deleted successfully');
+      await loadCategories();
+    }
 
     async function loadCategories() {
       const token = localStorage.getItem('token');
@@ -53,55 +95,15 @@
         const categoryItem = document.createElement('div');
         categoryItem.className = 'category-item';
         categoryItem.innerHTML = `
-          <h3>${category.name}</h3>
+          <input type="checkbox" value="${category._id}">
+          <label>${category.name}</label>
         `;
-        categoryItem.addEventListener('click', () => {
-          selectedCategoryId = category._id;
-          deleteCategoryButton.style.display = 'block';
-        });
         categoriesList.appendChild(categoryItem);
       });
+      deleteCategoryButton.style.display = categories.length ? 'block' : 'none';
     }
 
-    categoryForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = document.getElementById('category-name').value;
-      const token = localStorage.getItem('token');
-      const response = await fetch('/categories', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ name })
-      });
-      if (response.ok) {
-        await loadCategories();
-        categoryForm.reset();
-      } else {
-        alert('Failed to create category');
-      }
-    });
-
-    deleteCategoryButton.addEventListener('click', async () => {
-      const confirmation = confirm('Are you sure you want to delete this category and all associated events?');
-      if (!confirmation || !selectedCategoryId) {
-        return;
-      }
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/categories/${selectedCategoryId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (response.ok) {
-        alert('Category and associated events deleted successfully');
-        await loadCategories();
-      } else {
-        alert('Failed to delete category');
-      }
-    });
+    deleteCategoryButton.addEventListener('click', deleteCategory);
 
     if (!localStorage.getItem('token')) {
       window.location.href = '/index.html';

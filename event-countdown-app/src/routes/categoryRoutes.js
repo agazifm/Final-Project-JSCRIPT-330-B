@@ -73,5 +73,4 @@ router.delete('/categories/:id', auth, async (req, res) => {
     res.status(500).send({ error: e.message });
   }
 });
-
 module.exports = router;
