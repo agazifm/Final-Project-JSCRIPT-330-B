@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <button id="logout-button">Logout</button>
+  <div>
+  </div>
+  <form id="nearest-event-form">
+    <h1>Your Final Countdown</h1>
+    <div id="nearest-event" style="margin-bottom: 20px;">
+      <!-- Nearest event countdown will be displayed here -->
+    </div>
+  
+
+    <div id="countdown-clock" class="clock">
+      <div class="time" id="days">00</div>
+      <div class="label">Days</div>
+      <div class="separator">:</div>
+      <div class="time" id="hours">00</div>
+      <div class="label">Hours</div>
+      <div class="separator">:</div>
+      <div class="time" id="minutes">00</div>
+      <div class="label">Minutes</div>
+      <div class="separator">:</div>
+      <div class="time" id="seconds">00</div>
+      <div class="label">Seconds</div>
+    </div>
+  </form>
+
+  <form id="filter-form">
+    <label for="category-filter">Filter by Category:</label>
+    <select id="category-filter">
+      <option value="all">All</option>
+      <!-- Dynamically populate category options here -->
+    </select>
+    <button type="button" id="create-event-button">Create New Event</button>
+    <button type="button" id="manage-categories-button">Manage Categories</button>
+  </form>
+
+  <div id="events-list">
+    <!-- Event items will be inserted here dynamically -->
+  </div>
+
+  <div id="notification-area" style="position: fixed; top: 20px; right: 20px; z-index: 1000;"></div>
+
+  <script>
+    const nearestEventDiv = document.getElementById('nearest-event');
+    const countdownClock = document.getElementById('countdown-clock');
+    const eventsList = document.getElementById('events-list');
+
+    async function loadNearestEvent() {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/countdowns/aggregations/nearest-event', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) {
+        console.error('Failed to fetch nearest event:', response.statusText);
+        nearestEventDiv.innerHTML = '';
+        countdownClock.style.display = 'none';
+        return;
+      }
+      const nearestEvent = await response.json();
+      console.log('Nearest event data:', nearestEvent);
+      if (!nearestEvent) {
+        nearestEventDiv.innerHTML = '';
+        countdownClock.style.display = 'none';
+        return;
+      }
+      const eventDate = new Date(nearestEvent.date).getTime();
+      nearestEventDiv.innerHTML = `
+        <h2>${nearestEvent.title}</h2>
+        <p>${nearestEvent.description}</p>
+      `;
+      countdownClock.style.display = 'flex';
+      startClock(eventDate);
+    }
+
+    function startClock(eventDate) {
+      const daysElem = document.getElementById('days');
+      const hoursElem = document.getElementById('hours');
+      const minutesElem = document.getElementById('minutes');
+      const secondsElem = document.getElementById('seconds');
+
+      function updateClock() {
+        const now = new Date().getTime();
+        const distance = eventDate - now;
+
+        if (distance < 0) {
+          clearInterval(interval);
+          daysElem.innerHTML = '00';
+          hoursElem.innerHTML = '00';
+          minutesElem.innerHTML = '00';
+          secondsElem.innerHTML = '00';
+          return;
+        }
+
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        daysElem.innerHTML = String(days).padStart(2, '0');
+        hoursElem.innerHTML = String(hours).padStart(2, '0');
+        minutesElem.innerHTML = String(minutes).padStart(2, '0');
+        secondsElem.innerHTML = String(seconds).padStart(2, '0');
+      }
+
+      updateClock(); // Initial call to display clock immediately
+      const interval = setInterval(updateClock, 1000);
+    }
+
+    async function loadEvents() {
+      const token = localStorage.getItem('token');
+      const categoryFilter = document.getElementById('category-filter').value;
+      let url = '/countdowns';
+      if (categoryFilter !== 'all') {
+        url += `?categoryId=${categoryFilter}`;
+      }
+      console.log('Fetching events from URL:', url);
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      let events = await response.json();
+      events.sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort events by date
+      eventsList.innerHTML = '';
+      events.forEach(event => {
+        const eventItem = document.createElement('div');
+        eventItem.className = 'event-item';
+        eventItem.innerHTML = `
+          <h3>${event.title}</h3>
+          <p>${event.description}</p>
+          <p>${new Date(event.date).toLocaleString()}</p>
+          <p>Time Remaining: <span id="countdown-${event._id}"></span></p>
+          <button onclick="viewEvent('${event._id}')">View</button>
+          <button onclick="deleteEvent('${event._id}')">Delete</button>
+        `;
+        eventsList.appendChild(eventItem);
+        updateCountdown(event._id, event.date);
+      });
+    }
+
+    function updateCountdown(id, date) {
+      const countdownElement = document.getElementById(`countdown-${id}`);
+      const eventDate = new Date(date).getTime();
+      const interval = setInterval(() => {
+        const now = new Date().getTime();
+        const distance = eventDate - now;
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        countdownElement.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        if (distance < 0) {
+          clearInterval(interval);
+          countdownElement.innerHTML = "EXPIRED";
+          showModal('Event Ended: ' + document.querySelector(`#countdown-${id}`).closest('.event-item').querySelector('h3').textContent);
+          deleteEvent(id);
+        }
+      }, 1000);
+    }
+
+    async function deleteEvent(id) {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/countdowns/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (data._id) {
+        alert('Countdown deleted successfully');
+        location.reload(); // Refresh the page
+      } else {
+        alert('Failed to delete countdown');
+      }
+    }
+
+    function showNotification(message) {
+      const notification = document.createElement('div');
+      notification.className = 'notification';
+      notification.style = 'background-color: #4caf50; color: white; padding: 10px; margin: 5px; border-radius: 5px;';
+      notification.innerText = message;
+
+      const notificationArea = document.getElementById('notification-area');
+      notificationArea.appendChild(notification);
+
+      setTimeout(() => {
+        notification.remove();
+      }, 3000); // Remove notification after 3 seconds
+    }
+
+    function showDashboard() {
+      eventsList.style.display = 'block';
+      loadEvents();
+      loadCategories();
+      loadNearestEvent(); // Load the nearest event
+    }
+
+    document.getElementById('logout-button').addEventListener('click', () => {
+      localStorage.removeItem('token');
+      window.location.href = '/index.html';
+    });
+
+    document.getElementById('create-event-button').addEventListener('click', () => {
+      window.location.href = '/event.html';
+    });
+
+    document.getElementById('manage-categories-button').addEventListener('click', () => {
+      window.location.href = '/category.html';
+    });
+
+    function viewEvent(id) {
+      window.location.href = `/event.html?id=${id}`;
+    }
+
+    async function loadCategories() {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/categories', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const categories = await response.json();
+      const categoryFilter = document.getElementById('category-filter');
+      categoryFilter.innerHTML = '<option value="all">All</option>';
+      categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category._id;
+        option.textContent = category.name;
+        categoryFilter.appendChild(option);
+      });
+    }
+
+    document.getElementById('category-filter').addEventListener('change', loadEvents);
+
+    if (!localStorage.getItem('token')) {
+      window.location.href = '/index.html';
+    } else {
+      showDashboard();
+    }
+  </script>
+</body>
+</html>

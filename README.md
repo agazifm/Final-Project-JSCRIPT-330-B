@@ -1,51 +1,68 @@
 # Final-Project-JSCRIPT-330-B / Event Countdown Application
 
-Proposal and Task Breakdown
-1. Scenario:
+Event Countdown Application - Self-Evaluation
+Project Overview
 The Event Countdown Application is designed to provide users with a platform where they can create and track countdowns to important events or deadlines. Whether it's an upcoming birthday, a project deadline, or a vacation, users can use this application to stay organized and keep track of how much time is left until their events occur.
 
-2. Problem:
-People often find it challenging to keep track of upcoming events or deadlines and accurately calculate the time remaining until they occur. Traditional methods such as using calendars or manual calculations may not always be convenient or effective. The Event Countdown Application seeks to solve this problem by providing users with a simple and intuitive platform to create, manage, and track countdowns to their events.
+Functional Evaluation
+Features Implemented
 
-3. Technical Components:
+User Authentication:
 
-Routes: The application will implement CRUD operations for countdowns, user authentication, and authorization.
-Data Models: The data models will include entities for users and countdowns. User authentication will be managed using JSON Web Tokens (JWT) for secure authentication.
-Search Functionality: The application will implement text search functionality to allow users to search for specific countdowns by event names, descriptions, or keywords. This feature will enhance the user experience by enabling quick and efficient retrieval of relevant countdowns.
+Users can register and log in.
+Authentication tokens are used to secure API routes.
 
-4. Meeting Project Requirements:
+Dashboard:
 
-Authentication and Authorization:
-Users will be able to register, login, and authenticate to access the application securely.
-Authorization will be implemented to ensure users can only manage their own countdowns.
-CRUD Routes:
-CRUD routes will be implemented for countdowns, allowing users to create, read, update, and delete countdowns. Additional CRUD routes will be implemented for categories, allowing users to create, read, update, and delete categories to organize their countdowns. Further routes will be implemented for user management, including registration, login, and profile update. 
-Testing:
-Thorough testing will be conducted for all routes using testing frameworks like Mocha and Chai.
-Test coverage will be maintained at > 80% to ensure the reliability and stability of the application.
+The dashboard displays the nearest event with a live countdown clock.
+Users can filter events by category.
+Events are displayed with options to view and delete.
+Events are sorted by the most pressing deadline.
 
-5. Timeline:
+Event Management:
 
-Week 6:
-- Project setup, database schema design.
-- Implement authentication and basic CRUD operations for countdowns.
+Users can create new events with an optional category.
+Events can be viewed in detail.
+Users can change the category of an event.
+Expired events are automatically handled.
 
-Week 7:
-- Develop user registration and login functionality.
-- Implement authorization for managing countdowns.
-- Add additional CRUD routes for user management.
+Category Management:
 
-Week 8:
-- Implement search functionality for countdowns.
-- Conduct thorough testing and ensure test coverage > 80%.
-- Document project setup, development process, and API documentation.
+Users can create, view, and delete categories.
+Events can be categorized for better organization.
+Notifications:
 
-Week 9:
-- Finalize documentation and make any necessary adjustments.
-- Prepare for project demo, including rehearsal and presentation preparation.
-- Deployment to hosting platform and final testing.
+Notifications are displayed for actions such as event deletion.
+Design and User Experience
+The user interface provides a basic and functional design. Key areas include:
 
-Week 10:
-- Final demo and presentation to the class.
-- Submit project documentation and code repository link.
-- Review and reflect on project development process, lessons learned, and future improvements.
+Personalized Welcome Message: Users are greeted with a personalized message on the dashboard.
+Event Countdown Display: The most urgent event is highlighted with a countdown clock.
+Category Filtering: Users can filter events by category, making it easier to manage and view relevant events.
+Areas for Improvement
+Design Enhancements:
+
+The current design is functional but lacks visual appeal. A more polished and modern design could improve user experience.
+Implementing a digital clock with a large, clear countdown display could enhance the visual aspect of the application.
+User Flow:
+
+When no events are present, the dashboard displays default placeholders. Redirecting new users to an introduction page with a tutorial could improve onboarding.
+After deleting all events, users should be redirected to the introduction page to avoid displaying an empty dashboard.
+Category Management:
+
+Ensure smooth interaction when creating and deleting categories, avoiding issues such as failed deletions.
+Technical Evaluation
+Achievements
+Authentication: Secure login and registration with token-based authentication.
+CRUD Operations: Implemented CRUD operations for both events and categories.
+Real-time Countdown: Implemented real-time countdown for the nearest event.
+Notifications: Added user notifications for key actions.
+Challenges
+Testing: Unable to get the testing framework to work. This is a significant area for improvement as automated testing is crucial for maintaining application reliability.
+Error Handling: Basic error handling is in place, but more comprehensive and user-friendly error messages could improve the user experience.
+Overall Assessment
+The Event Countdown Application meets the core requirements and provides a functional platform for managing and tracking events. However, there is room for improvement in both design and functionality. Future work should focus on enhancing the user interface, improving user flow, and implementing comprehensive testing to ensure application stability.
+
+Conclusion
+This project has provided a solid foundation for understanding full-stack development, including authentication, CRUD operations, and real-time data handling. The next steps should focus on refining the user experience and ensuring robust testing to support future development.
+
