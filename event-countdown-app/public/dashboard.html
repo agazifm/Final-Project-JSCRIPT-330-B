@@ -5,19 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard</title>
   <link rel="stylesheet" href="styles.css">
-  <style>
-  </style>
 </head>
 <body>
-  <h1>Dashboard</h1>
   <button id="logout-button">Logout</button>
-  <button id="manage-categories-button">Manage Categories</button>
-  <button id="create-event-button">Create New Event</button>
-
+  <div>
+  </div>
   <form id="nearest-event-form">
+    <h1>Your Final Countdown</h1>
     <div id="nearest-event" style="margin-bottom: 20px;">
       <!-- Nearest event countdown will be displayed here -->
     </div>
+  
 
     <div id="countdown-clock" class="clock">
       <div class="time" id="days">00</div>
@@ -34,17 +32,20 @@
     </div>
   </form>
 
-  <div>
+  <form id="filter-form">
     <label for="category-filter">Filter by Category:</label>
     <select id="category-filter">
       <option value="all">All</option>
       <!-- Dynamically populate category options here -->
     </select>
-  </div>
+    <button type="button" id="create-event-button">Create New Event</button>
+    <button type="button" id="manage-categories-button">Manage Categories</button>
+  </form>
 
   <div id="events-list">
     <!-- Event items will be inserted here dynamically -->
   </div>
+
   <div id="notification-area" style="position: fixed; top: 20px; right: 20px; z-index: 1000;"></div>
 
   <script>
@@ -74,7 +75,7 @@
       }
       const eventDate = new Date(nearestEvent.date).getTime();
       nearestEventDiv.innerHTML = `
-        <h2>Nearest Event: ${nearestEvent.title}</h2>
+        <h2>${nearestEvent.title}</h2>
         <p>${nearestEvent.description}</p>
       `;
       countdownClock.style.display = 'flex';
