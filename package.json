@@ -15,6 +15,7 @@
         "chance": "^1.1.11",
         "dotenv": "^16.4.5",
         "express": "^4.17.1",
+        "express-rate-limit": "^7.3.1",
         "faker": "^6.6.6",
         "formidable-fix": "^2.1.4",
         "jsonwebtoken": "^9.0.2",

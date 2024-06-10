@@ -38,14 +38,10 @@ describe('User Routes', () => {
   });
 
   it('should login an existing user', async () => {
-    console.log('newUser in test:', newUser); // Add this line for debugging
-
     const response = await request(app).post('/users/login').send({
       email: newUser.email,
       password: 'MyPass777!',
     });
-
-    console.log('Login response body:', response.body); // Add this line for debugging
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('user');

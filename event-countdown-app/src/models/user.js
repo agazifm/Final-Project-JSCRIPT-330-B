@@ -1,5 +1,3 @@
-// models/user.js
-
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -35,16 +33,11 @@ const userSchema = new mongoose.Schema({
 });
 
 userSchema.statics.findByCredentials = async (email, password) => {
-  console.log('Email:', email);
-  console.log('Password:', password);
   const user = await User.findOne({ email });
   if (!user) {
-    console.log('User not found with email:', email);
     throw new Error('Unable to login');
   }
-  console.log('Stored hashed password:', user.password);
   const isMatch = await bcrypt.compare(password, user.password);
-  console.log('Password match:', isMatch);
   if (!isMatch) {
     throw new Error('Unable to login');
   }
