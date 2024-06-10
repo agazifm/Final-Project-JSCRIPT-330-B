@@ -6,23 +6,26 @@ The Event Countdown Application is designed to provide users with a platform whe
 
 Functional Evaluation
 Features Implemented
+
 User Authentication:
 
 Users can register and log in.
 Authentication tokens are used to secure API routes.
+
 Dashboard:
 
-Users are greeted with a personalized welcome message.
 The dashboard displays the nearest event with a live countdown clock.
 Users can filter events by category.
 Events are displayed with options to view and delete.
 Events are sorted by the most pressing deadline.
+
 Event Management:
 
 Users can create new events with an optional category.
 Events can be viewed in detail.
 Users can change the category of an event.
 Expired events are automatically handled.
+
 Category Management:
 
 Users can create, view, and delete categories.
