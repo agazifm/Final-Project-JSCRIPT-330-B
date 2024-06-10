@@ -33,19 +33,19 @@
     const showRegisterLink = document.getElementById('show-register');
     const registerForm = document.getElementById('register-form');
     const loginForm = document.getElementById('login-form');
-
+  
     showLoginLink.addEventListener('click', (e) => {
       e.preventDefault();
       registerForm.style.display = 'none';
       loginForm.style.display = 'block';
     });
-
+  
     showRegisterLink.addEventListener('click', (e) => {
       e.preventDefault();
       registerForm.style.display = 'block';
       loginForm.style.display = 'none';
     });
-
+  
     registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('register-name').value;
@@ -61,10 +61,11 @@
         localStorage.setItem('token', data.token);
         window.location.href = '/dashboard.html';
       } else {
+        console.error('Registration failed:', data);
         alert('Registration failed');
       }
     });
-
+  
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('login-email').value;
@@ -79,9 +80,11 @@
         localStorage.setItem('token', data.token);
         window.location.href = '/dashboard.html';
       } else {
+        console.error('Login failed:', data);
         alert('Login failed');
       }
     });
   </script>
+  
 </body>
 </html>

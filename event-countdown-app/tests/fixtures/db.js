@@ -1,52 +1,70 @@
-const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../../src/models/user');
 const Category = require('../../src/models/category');
 const Countdown = require('../../src/models/countdown');
+const request = require('supertest');
+const app = require('../../src/app');
 
 const userOneId = new mongoose.Types.ObjectId();
 const userOne = {
   _id: userOneId,
   name: 'User One',
   email: 'userone@example.com',
-  password: '56what!!',
+  password: 'MyPass777!', // Plain text password for login
   tokens: [{
     token: jwt.sign({ _id: userOneId }, process.env.JWT_SECRET)
   }]
 };
 
-const categoryOneId = new mongoose.Types.ObjectId();
-const categoryOne = {
-  _id: categoryOneId,
-  name: 'Category One',
-  owner: userOneId
-};
-
-const countdownOneId = new mongoose.Types.ObjectId();
-const countdownOne = {
-  _id: countdownOneId,
-  title: 'Countdown One',
-  description: 'Description for countdown one',
-  date: new Date(),
-  owner: userOneId,
-  categoryId: categoryOneId
-};
+let userOneToken;
 
 const setupDatabase = async () => {
-  await User.deleteMany();
-  await Category.deleteMany();
-  await Countdown.deleteMany();
-  await new User(userOne).save();
-  await new Category(categoryOne).save();
-  await new Countdown(countdownOne).save();
+  await mongoose.connect(process.env.MONGODB_URI_TEST, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+  });
+
+  await mongoose.connection.db.dropDatabase();
+
+  const hashedPassword = await bcrypt.hash(userOne.password, 8);
+  await new User({
+      ...userOne,
+      password: hashedPassword
+  }).save();
+
+  const response = await request(app).post('/users/login').send({
+      email: userOne.email,
+      password: userOne.password, // Send the plain text password
+  });
+
+  userOneToken = response.body.token;
+
+  const category = await new Category({
+      name: 'Existing Category',
+      owner: userOne._id,
+  }).save();
+
+  const countdown = await new Countdown({
+      title: 'Existing Countdown',
+      description: 'This is an existing countdown',
+      date: new Date(),
+      categoryId: category._id,
+      owner: userOne._id,
+  }).save();
+};
+
+const tearDownDatabase = async () => {
+  await mongoose.connection.db.dropDatabase();
+  await mongoose.connection.close();
 };
 
 module.exports = {
   userOneId,
   userOne,
-  categoryOneId,
-  categoryOne,
-  countdownOneId,
-  countdownOne,
-  setupDatabase
+  userOneToken,
+  setupDatabase,
+  tearDownDatabase,
+  User,
 };

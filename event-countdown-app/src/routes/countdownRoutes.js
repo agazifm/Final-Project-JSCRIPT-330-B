@@ -1,6 +1,5 @@
 const express = require('express');
 const Countdown = require('../models/countdown');
-const Category = require('../models/category');
 const auth = require('../middleware/auth');
 const router = new express.Router();
 
